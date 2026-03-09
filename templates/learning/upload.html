@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Upload Study Material{% endblock %}
+
+{% block content %}
+
+<div
+    class="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 sm:p-10 mb-10 mt-6 transition-colors">
+
+    <div class="text-center mb-8">
+        <div
+            class="w-16 h-16 mx-auto bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner border border-teal-100 dark:border-teal-800/50">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+        </div>
+        <h2 class="text-3xl font-bold text-teal-700 dark:text-teal-400 tracking-tight">Upload Study Material</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Upload your PDF or PPTX to generate study tools.</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Document Title</label>
+            <input type="text" name="title" placeholder="Give your document a descriptive name"
+                class="w-full px-4 py-3 bg-white/50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 dark:focus:ring-teal-500 dark:focus:border-teal-500 focus:outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white"
+                required>
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Select File</label>
+            <div class="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-gray-300 dark:border-slate-600 border-dashed rounded-xl hover:border-teal-400 dark:hover:border-teal-500 transition-colors bg-gray-50/50 dark:bg-slate-900/50 group cursor-pointer relative"
+                onclick="document.getElementById('file-upload').click()">
+                <div class="space-y-2 text-center">
+                    <div
+                        class="w-14 h-14 mx-auto rounded-full bg-white dark:bg-slate-800 shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <ion-icon name="document-attach-outline"
+                            class="text-2xl text-teal-500 dark:text-teal-400"></ion-icon>
+                    </div>
+                    <div class="flex flex-col text-sm text-gray-600 dark:text-gray-400 justify-center mt-2">
+                        <span
+                            class="relative font-medium text-teal-600 dark:text-teal-400 hover:text-teal-500 dark:hover:text-teal-300">
+                            <span>Upload a file</span>
+                            <input id="file-upload" name="file" type="file" class="sr-only" accept=".pdf,.pptx" required
+                                onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'No file selected'">
+                        </span>
+                        <p class="pl-1">or drag and drop</p>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-500 font-medium tracking-wide">PDF, PPTX up to 10MB
+                    </p>
+                    <p id="file-name"
+                        class="text-sm text-indigo-600 dark:text-indigo-400 font-semibold mt-2 truncate max-w-xs mx-auto">
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit"
+            class="w-full mt-2 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white font-medium py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-200 dark:shadow-none transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-lg">
+            <ion-icon name="sparkles"></ion-icon> Upload & Process Document
+        </button>
+    </form>
+
+</div>
+
+{% endblock %}

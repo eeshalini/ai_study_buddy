@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Learning Analytics{% endblock %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto pb-12">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 py-4">
+        <div>
+            <h2 class="text-3xl font-bold text-teal-700 dark:text-teal-400 tracking-tight">
+                Learning Analytics
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Track your study progress and identify weak areas.</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-3">
+            {% if revision_plan %}
+            <a href="{% url 'generate_revision_plan' %}"
+               class="flex items-center gap-1.5 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition shadow-sm">
+               <ion-icon name="refresh-outline"></ion-icon> Regenerate Plan
+            </a>
+            {% endif %}
+            <a href="{% url 'dashboard' %}"
+               class="flex items-center gap-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 text-sm font-medium px-4 py-2.5 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition shadow-sm">
+               <ion-icon name="arrow-back-outline"></ion-icon> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Smart Revision Plan Section -->
+    <div class="bg-indigo-50/50 dark:bg-slate-800 rounded-2xl p-6 sm:p-8 mb-10 border border-indigo-100 dark:border-slate-700 shadow-sm transition-colors">
+        <h3 class="text-xl font-bold text-indigo-900 dark:text-indigo-300 mb-1">Personalized Smart Revision Plan</h3>
+        <p class="text-xs text-indigo-500 dark:text-indigo-400 mb-6 font-medium">
+            {% if revision_plan_date %}Last analyzed: {{ revision_plan_date|date:"M d, Y H:i" }}{% else %}Not yet analyzed{% endif %}
+        </p>
+
+        {% if revision_plan %}
+        <div class="bg-white dark:bg-slate-900 rounded-xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm transition-colors">
+            
+            <h4 class="text-lg font-bold text-red-700 dark:text-red-400 mb-1 leading-snug">
+                Knowledge Gap: {{ revision_plan.knowledge_gap }}
+            </h4>
+            <p class="text-sm font-medium text-indigo-700 dark:text-indigo-400 mb-6">
+                Suggested Tutor Style: {{ revision_plan.suggested_tutor_style }}
+            </p>
+
+            <div class="mb-6">
+                <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Recommended Content:</p>
+                <p class="text-sm text-gray-800 dark:text-gray-200">{{ revision_plan.recommended_content }}</p>
+            </div>
+
+            <div>
+                <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Spaced Repetition Schedule:</p>
+                
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center gap-4 group">
+                        <input type="checkbox" id="check-today" data-day="today" class="revision-checkbox w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-900 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 cursor-pointer" {% if revision_plan.completed.today %}checked{% endif %}>
+                        <span class="w-24 flex-shrink-0 text-center text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/50 py-1.5 px-2 rounded-lg border border-indigo-200 dark:border-indigo-800/50 transition-opacity {% if revision_plan.completed.today %}opacity-50{% endif %}">Today</span>
+                        <label for="check-today" class="text-sm text-gray-700 dark:text-gray-300 py-1 cursor-pointer select-none flex-1 transition-all duration-300 {% if revision_plan.completed.today %}line-through text-gray-400 dark:text-gray-500{% endif %}">{{ revision_plan.spaced_repetition_schedule.today }}</label>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 group">
+                        <input type="checkbox" id="check-tomorrow" data-day="tomorrow" class="revision-checkbox w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-900 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 cursor-pointer" {% if revision_plan.completed.tomorrow %}checked{% endif %}>
+                        <span class="w-24 flex-shrink-0 text-center text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/50 py-1.5 px-2 rounded-lg border border-indigo-200 dark:border-indigo-800/50 transition-opacity {% if revision_plan.completed.tomorrow %}opacity-50{% endif %}">Tomorrow</span>
+                        <label for="check-tomorrow" class="text-sm text-gray-700 dark:text-gray-300 py-1 cursor-pointer select-none flex-1 transition-all duration-300 {% if revision_plan.completed.tomorrow %}line-through text-gray-400 dark:text-gray-500{% endif %}">{{ revision_plan.spaced_repetition_schedule.tomorrow }}</label>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 group">
+                        <input type="checkbox" id="check-after" data-day="after_2_days" class="revision-checkbox w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-900 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 cursor-pointer" {% if revision_plan.completed.after_2_days %}checked{% endif %}>
+                        <span class="w-24 flex-shrink-0 text-center text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/50 py-1.5 px-2 rounded-lg border border-indigo-200 dark:border-indigo-800/50 transition-opacity {% if revision_plan.completed.after_2_days %}opacity-50{% endif %}">After 2 days</span>
+                        <label for="check-after" class="text-sm text-gray-700 dark:text-gray-300 py-1 cursor-pointer select-none flex-1 transition-all duration-300 {% if revision_plan.completed.after_2_days %}line-through text-gray-400 dark:text-gray-500{% endif %}">{{ revision_plan.spaced_repetition_schedule.after_2_days }}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-white dark:bg-slate-900 rounded-xl p-8 border border-gray-100 dark:border-slate-700 shadow-sm text-center transition-colors flex flex-col items-center justify-center">
+            <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4 text-indigo-500 dark:text-indigo-400 text-3xl">
+                <ion-icon name="bulb-outline"></ion-icon>
+            </div>
+            <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No Revision Plan Found</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">Generate a personalized revision plan based on your recent quiz performance and uploaded study materials.</p>
+            
+            <a href="{% url 'generate_revision_plan' %}"
+               class="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white font-medium px-6 py-3 rounded-xl shadow-lg dark:shadow-none transition-transform transform hover:-translate-y-0.5">
+               <ion-icon name="color-wand-outline" class="text-lg"></ion-icon> Generate Smart Plan
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Overall Stats -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex justify-around items-center py-6 mb-10 transition-colors">
+        <div class="text-center w-full border-r border-gray-100 dark:border-slate-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Total Quizzes</p>
+            <p class="text-4xl font-bold text-teal-600 dark:text-teal-400">
+                {{ data.total_quizzes|default:"0" }}
+            </p>
+        </div>
+
+        <div class="text-center w-full">
+            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Average Score</p>
+            <p class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">
+                {{ data.avg_score|default:"0" }}%
+            </p>
+        </div>
+    </div>
+
+    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Document Breakdown</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for data in doc_data %}
+        <div class="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 shadow-sm rounded-2xl p-6 hover:shadow-lg dark:hover:shadow-slate-900/50 transition duration-300 flex flex-col">
+
+            <h3 class="text-lg font-bold text-teal-700 dark:text-teal-400 mb-4 truncate border-b border-gray-100 dark:border-slate-700 pb-4">
+                {{ data.document.title }}
+            </h3>
+
+            <!-- Document Stats -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100/50 dark:border-indigo-800/30 text-center">
+                    <p class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider mb-1">Messages</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                        {{ data.total_chat_messages }}
+                    </p>
+                </div>
+                <div class="bg-teal-50/50 dark:bg-teal-900/20 p-4 rounded-xl border border-teal-100/50 dark:border-teal-800/30 text-center">
+                    <p class="text-xs text-teal-600 dark:text-teal-400 font-semibold uppercase tracking-wider mb-1">Flashcards</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                        {{ data.total_flashcards }}
+                    </p>
+                </div>
+            </div>
+
+            {% if data.weak_topics %}
+            <div class="mt-auto bg-red-50/50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100/50 dark:border-red-800/30">
+                <h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center gap-1.5">
+                    <ion-icon name="warning-outline" class="text-lg"></ion-icon> Needs Review
+                </h4>
+                <ul class="space-y-2">
+                    {% for topic in data.weak_topics %}
+                    <li class="flex justify-between items-center text-sm">
+                        <span class="text-gray-700 dark:text-gray-300 font-medium truncate pr-2">{{ topic.topic }}</span>
+                        <span class="px-2 py-0.5 bg-white dark:bg-slate-700 text-red-500 dark:text-red-400 font-bold rounded shadow-sm border border-red-100 dark:border-slate-600 text-xs">{{ topic.accuracy }}%</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <div class="mt-auto flex items-center justify-center p-4 text-sm text-gray-400 dark:text-gray-500 font-medium">
+                No weak areas identified yet.
+            </div>
+            {% endif %}
+
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-16 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
+            <div class="text-6xl mb-4 text-gray-300 dark:text-gray-600 flex justify-center">
+                <ion-icon name="podium-outline"></ion-icon>
+            </div>
+            <h3 class="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-200">No data available</h3>
+            <p class="text-gray-500 dark:text-gray-400">Take some quizzes to generate analytics.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // CSRF Token logic for AJAX
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        // Revision Checklist Listener
+        const checkboxes = document.querySelectorAll('.revision-checkbox');
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const day = this.getAttribute('data-day');
+                const isChecked = this.checked;
+                
+                // Target adjacent elements to apply visual styles immediately
+                const container = this.closest('.flex');
+                const badge = container.querySelector('span');
+                const label = container.querySelector('label');
+
+                if (isChecked) {
+                    label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                    label.classList.remove('text-gray-700', 'dark:text-gray-300');
+                    badge.classList.add('opacity-50');
+                } else {
+                    label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+                    label.classList.add('text-gray-700', 'dark:text-gray-300');
+                    badge.classList.remove('opacity-50');
+                }
+
+                // Send background update to database
+                fetch("{% url 'toggle_revision_task' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        'day': day
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Failed to update task:', data.error);
+                        // Revert visual state if failed
+                        this.checked = !isChecked;
+                        this.dispatchEvent(new Event('change'));
+                    }
+                })
+                .catch(err => console.error('Fetch error:', err));
+            });
+        });
+    });
+</script>
+
+{% endblock %}

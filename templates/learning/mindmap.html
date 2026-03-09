@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}Mindmap - {{ document.title }} - AI Study Buddy{% endblock %}
+
+{% block content %}
+
+<!-- Load Markmap.js -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/markmap-lib"></script>
+<script src="https://cdn.jsdelivr.net/npm/markmap-view"></script>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-100 to-yellow-50 dark:from-yellow-900/40 dark:to-yellow-800/20 flex items-center justify-center border border-yellow-200 dark:border-yellow-700/50">
+                    <ion-icon name="git-network" class="text-yellow-500 text-2xl"></ion-icon>
+                </div>
+                Mindmap: {{ document.title }}
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 ml-15">Visual overview of your document's key concepts</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="openMindmapModal('{{ document.id }}')"
+               class="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-md dark:shadow-none transition-all transform hover:-translate-y-0.5 text-sm">
+               <ion-icon name="color-wand-outline" class="text-lg"></ion-icon> Regenerate Types
+            </button>
+
+            <a href="{% url 'dashboard' %}"
+               class="flex items-center gap-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium px-5 py-2.5 rounded-xl transition-colors shadow-sm text-sm">
+               <ion-icon name="arrow-back-outline"></ion-icon> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Mindmap Box with Controls Wrapper -->
+    <div class="relative w-full">
+        <!-- Zoom Controls (Fixed to Container Viewport) -->
+        <div class="absolute bottom-6 right-6 z-20 flex flex-col gap-2 opacity-50 hover:opacity-100 transition-opacity">
+            <button id="zoom-in" class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 p-2.5 rounded-xl shadow border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
+                <ion-icon name="add-outline" class="text-xl"></ion-icon>
+            </button>
+            <button id="zoom-reset" class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 p-2.5 rounded-xl shadow border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
+                <ion-icon name="scan-outline" class="text-xl"></ion-icon>
+            </button>
+            <button id="zoom-out" class="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 p-2.5 rounded-xl shadow border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
+                <ion-icon name="remove-outline" class="text-xl"></ion-icon>
+            </button>
+        </div>
+
+        <!-- Scrollable SVG Canvas -->
+        <div class="bg-white/80 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-inner rounded-3xl min-h-[600px] h-[75vh] w-full overflow-auto transition-colors" id="main-container">
+            {% if mindmap %}
+            <div class="w-full h-full" id="svg-wrapper">
+                <!-- Markmap diagram definition will be injected here -->
+                <svg id="markmap-container" class="w-full h-full outline-none"></svg>
+            </div>
+
+            {{ mindmap.content|json_script:"mindmap-data" }}
+            <!-- Mindmap CSS Overrides -->
+            <style>
+                /* Dark Mode Text Colors */
+                html.dark .markmap-node text {
+                    fill: #f8fafc !important;
+                }
+                html.dark .markmap-node path, html.dark .markmap-node line {
+                    stroke: #94a3b8 !important;
+                }
+                html.dark .markmap-node circle {
+                    fill: #1e293b !important;
+                    stroke: #94a3b8 !important;
+                }
+            </style>
+            
+            <script>
+                // Safely load the JSON data from Django
+                const data = JSON.parse(document.getElementById('mindmap-data').textContent);
+                
+                function jsonToMarkdown(node, level = 1) {
+                    if (!node) return "";
+                    let safeText = (node.title || "").toString().replace(/[\n\r]/g, " ");
+                    let md = `${'#'.repeat(level)} ${safeText}`;
+                    if (node.type) {
+                        let safeType = node.type.toString().replace(/[\n\r]/g, " ");
+                        md += `\n*${safeType}*`; // Add the type as italicized text below
+                    }
+                    md += "\n";
+                    
+                    if (node.children && node.children.length > 0) {
+                        node.children.forEach(child => {
+                            md += jsonToMarkdown(child, level + 1);
+                        });
+                    }
+                    return md;
+                }
+                
+                if(data && Object.keys(data).length > 0) {
+                    const mdString = jsonToMarkdown(data);
+                    
+                    const { markmap } = window;
+                    const { Transformer, Markmap } = markmap;
+                    
+                    const transformer = new Transformer();
+                    const { root, features } = transformer.transform(mdString);
+                    
+                    const svgEl = document.querySelector('#markmap-container');
+                    
+                    // Base Colors corresponding to branches (Pink, Cyan, Green, Orange, Red, Purple)
+                    const branchColors = ["#d81b60", "#0288d1", "#43a047", "#fb8c00", "#e53935", "#8e24aa"];
+                    
+                    const mm = Markmap.create(svgEl, {
+                        color: (node) => {
+                            let colorIndex = (node.depth || 0) % branchColors.length;
+                            return branchColors[colorIndex];
+                        },
+                        style: id => `
+                            .markmap-node text { 
+                                font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; 
+                                font-weight: 500;
+                            }
+                        `,
+                        fitRatio: 0.95
+                    }, root);
+                    
+                    // Attach Zoom Listeners mapping to Markmap's internal svg d3 zoom
+                    document.getElementById("zoom-in").addEventListener("click", () => {
+                        mm.rescale(1.2);
+                    });
+                    
+                    document.getElementById("zoom-out").addEventListener("click", () => {
+                        mm.rescale(0.8);
+                    });
+                    
+                    document.getElementById("zoom-reset").addEventListener("click", () => {
+                        mm.fit();
+                    });
+
+                } else {
+                    document.getElementById('svg-wrapper').innerHTML = `
+                        <div class="flex flex-col items-center justify-center text-center space-y-4 opacity-70 p-10 w-full h-full">
+                            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-slate-700 dark:to-slate-800 border border-yellow-100 dark:border-slate-600 flex items-center justify-center text-4xl text-yellow-500 dark:text-yellow-600 shadow-inner">
+                                <ion-icon name="git-network-outline"></ion-icon>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200">No Mindmap Renderable</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-sm">The generated data was empty. Please regenerate.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            </script>
+
+        {% else %}
+            
+            <div class="flex flex-col items-center justify-center text-center space-y-4 opacity-70 p-10 w-full h-full">
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-slate-700 dark:to-slate-800 border border-yellow-100 dark:border-slate-600 flex items-center justify-center text-4xl text-yellow-500 dark:text-yellow-600 shadow-inner">
+                    <ion-icon name="git-network-outline"></ion-icon>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200">No Mindmap Generated</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-sm">Click the generate button above to create a visual learning map for this document.</p>
+                </div>
+                <button type="button" onclick="openMindmapModal('{{ document.id }}')"
+                   class="mt-4 bg-gradient-to-r from-teal-500 to-indigo-600 text-white font-medium px-6 py-3 rounded-xl shadow-md dark:shadow-none hover:shadow-lg dark:hover:shadow-none transition-all flex items-center gap-2">
+                   <ion-icon name="color-wand-outline" class="text-lg"></ion-icon> Generate Now
+                </button>
+            </div>
+
+        {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- Mindmap Type Selection Modal -->
+<div id="mindmapModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm transition-opacity">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl w-11/12 max-w-lg shadow-2xl overflow-hidden transform transition-all scale-100 border border-gray-100 dark:border-slate-700">
+        
+        <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <ion-icon name="color-wand-outline" class="text-yellow-500 text-2xl"></ion-icon>
+                Generate Mindmap
+            </h3>
+            <button type="button" onclick="closeMindmapModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition focus:outline-none">
+                <ion-icon name="close-outline" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <form id="mindmapForm" method="GET" action="" class="p-6">
+            <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">
+                Select the type of mindmap you want to generate. Each type provides a different perspective on your document's content.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Option 1: Overview -->
+                <label class="flex items-start p-4 border border-gray-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50 dark:has-[:checked]:bg-teal-900/20 group">
+                    <div class="flex items-center h-5">
+                        <input type="radio" name="type" value="overview" class="w-5 h-5 text-teal-600 border-gray-300 focus:ring-teal-500 dark:focus:ring-teal-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" checked>
+                    </div>
+                    <div class="ml-4 text-sm">
+                        <span class="font-semibold text-gray-800 dark:text-gray-200 block mb-1">Concept Overview</span>
+                        <p class="text-gray-500 dark:text-gray-400">Displays the main structure formed by single keywords. Best for a quick bird's-eye view.</p>
+                    </div>
+                </label>
+
+                <!-- Option 2: Detailed -->
+                <label class="flex items-start p-4 border border-gray-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20 group">
+                    <div class="flex items-center h-5">
+                        <input type="radio" name="type" value="detailed" class="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div class="ml-4 text-sm">
+                        <span class="font-semibold text-gray-800 dark:text-gray-200 block mb-1">Detailed Breakdown</span>
+                        <p class="text-gray-500 dark:text-gray-400">Deep dive into detailed matter and explanations about the keywords.</p>
+                    </div>
+                </label>
+
+                <!-- Option 3: Takeaways -->
+                <label class="flex items-start p-4 border border-gray-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 dark:has-[:checked]:bg-purple-900/20 group">
+                    <div class="flex items-center h-5">
+                        <input type="radio" name="type" value="takeaways" class="w-5 h-5 text-purple-600 border-gray-300 focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div class="ml-4 text-sm">
+                        <span class="font-semibold text-gray-800 dark:text-gray-200 block mb-1">Key Takeaways</span>
+                        <p class="text-gray-500 dark:text-gray-400">Highlights the most important points, core conclusions, and actionable insights.</p>
+                    </div>
+                </label>
+            </div>
+
+            <div class="mt-8 flex justify-end gap-3">
+                <button type="button" onclick="closeMindmapModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-600 focus:ring-4 focus:outline-none focus:ring-gray-200 dark:focus:ring-gray-700 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-indigo-600 rounded-xl hover:from-teal-600 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 shadow-md transition-all">
+                    Generate
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openMindmapModal(docId) {
+        document.getElementById('mindmapModal').classList.remove('hidden');
+        document.getElementById('mindmapForm').action = '/learning/generate-mindmap/' + docId + '/';
+    }
+
+    function closeMindmapModal() {
+        document.getElementById('mindmapModal').classList.add('hidden');
+    }
+</script>
+
+{% endblock %}

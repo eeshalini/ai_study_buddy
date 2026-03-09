@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<h2 class="text-3xl font-bold mb-8">
+    Welcome, {{ user.username }}
+</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <a href="{% url 'upload_document' %}"
+       class="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition">
+        <h3 class="text-lg font-semibold">Upload Material</h3>
+        <p class="text-sm text-gray-500 mt-2">Upload PDF or PPT for learning</p>
+    </a>
+
+    <a href="{% url 'chat' %}"
+       class="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition">
+        <h3 class="text-lg font-semibold">Ask Questions</h3>
+        <p class="text-sm text-gray-500 mt-2">Chat with AI tutor</p>
+    </a>
+
+    <a href="{% url 'flashcards' %}"
+       class="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition">
+        <h3 class="text-lg font-semibold">Flashcards</h3>
+        <p class="text-sm text-gray-500 mt-2">Quick revision cards</p>
+    </a>
+
+    <a href="{% url 'quiz' %}"
+       class="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition">
+        <h3 class="text-lg font-semibold">Take Quiz</h3>
+        <p class="text-sm text-gray-500 mt-2">Adaptive practice questions</p>
+    </a>
+
+</div>
+
+{% endblock %}

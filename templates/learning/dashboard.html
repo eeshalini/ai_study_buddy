@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - AI Study Buddy{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between py-8">
+
+    <div>
+        <h2 class="text-4xl font-bold text-teal-700 dark:text-teal-400 tracking-tight">
+            Your Study Dashboard
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 mt-2 text-lg">
+            Chat, generate quizzes, flashcards, and mindmaps from your documents
+        </p>
+    </div>
+
+    {% if documents %}
+    <a href="{% url 'upload_document' %}"
+        class="mt-4 md:mt-0 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white font-medium px-6 py-3 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transform hover:-translate-y-0.5 transition-all text-sm flex items-center gap-2">
+        <ion-icon name="cloud-upload-outline" class="text-lg"></ion-icon>
+        Upload Document
+    </a>
+    {% endif %}
+
+</div>
+
+<!-- Stats Card -->
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex justify-around items-center py-6 mb-10 transition-colors">
+
+    <div class="text-center w-full border-r border-gray-100 dark:border-slate-700">
+        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Total Documents</p>
+        <p class="text-4xl font-bold text-teal-600 dark:text-teal-400">
+            {{ documents|length }}
+        </p>
+    </div>
+
+    <div class="text-center w-full border-r border-gray-100 dark:border-slate-700">
+        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Flashcards Ready</p>
+        <p class="text-4xl font-bold text-gray-700 dark:text-gray-200">
+            {{ documents|length }}
+        </p>
+    </div>
+
+    <div class="text-center w-full">
+        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Quizzes Available</p>
+        <p class="text-4xl font-bold text-teal-500 hover:text-teal-400">
+            {{ documents|length }}
+        </p>
+    </div>
+
+</div>
+
+<!-- Documents Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+
+    {% for doc in documents %}
+    <div class="relative group bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 shadow-sm rounded-2xl p-6 hover:shadow-xl dark:hover:shadow-slate-900/50 transition duration-300">
+        
+        <!-- Delete Button (Top Left - Floating) -->
+        <form action="{% url 'delete_document' doc.id %}" method="POST" class="absolute -top-3 -left-3" onsubmit="return confirm('Are you sure you want to delete this document? All associated quizzes, mindmaps, and history will be permanently lost.');">
+            {% csrf_token %}
+            <button type="submit" class="bg-red-400 hover:bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md dark:shadow-none transition-colors">
+                <ion-icon name="trash-outline" class="text-sm"></ion-icon>
+            </button>
+        </form>
+
+        <!-- Title -->
+        <h3 class="text-xl font-bold text-teal-700 dark:text-teal-400 mb-2 truncate">
+            {{ doc.title }}
+        </h3>
+
+        {% if doc.file %}
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            Study tools available for this document
+        </p>
+        {% else %}
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            General Chat Session
+        </p>
+        {% endif %}
+
+        <!-- Main Action Button -->
+        <a href="{% url 'chat' doc.id %}"
+            class="flex items-center justify-center gap-2 w-full bg-[#1e88e5] hover:bg-blue-600 text-white font-medium py-2.5 rounded-lg transition shadow-sm mb-3">
+            <ion-icon name="chatbubbles" class="text-blue-200"></ion-icon> Chat
+        </a>
+
+        {% if doc.file %}
+        <!-- Secondary Buttons -->
+        <div class="grid grid-cols-3 gap-2">
+
+            <a href="{% url 'flashcards' doc.id %}"
+                class="flex items-center justify-center gap-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium py-2 rounded-lg hover:border-pink-300 hover:text-pink-600 dark:hover:border-pink-400 dark:hover:text-pink-400 transition">
+                <ion-icon name="copy" class="text-pink-400"></ion-icon> Flashcards
+            </a>
+
+            <a href="{% url 'quiz' doc.id %}"
+                class="flex items-center justify-center gap-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium py-2 rounded-lg hover:border-red-300 hover:text-red-500 dark:hover:border-red-400 dark:hover:text-red-400 transition">
+                <ion-icon name="checkbox" class="text-red-400"></ion-icon> Quiz
+            </a>
+
+            <button type="button" onclick="openMindmapModal('{{ doc.id }}')"
+                class="flex items-center justify-center gap-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium py-2 rounded-lg hover:border-yellow-300 hover:text-yellow-500 dark:hover:border-yellow-400 dark:hover:text-yellow-400 transition w-full">
+                <ion-icon name="git-network" class="text-yellow-400"></ion-icon> Mindmap
+            </button>
+
+        </div>
+        {% endif %}
+
+    </div>
+
+    {% empty %}
+
+    <!-- Empty State -->
+    <div class="col-span-full text-center py-16 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
+        <div class="text-6xl mb-4 text-gray-300 dark:text-gray-600 flex justify-center">
+            <ion-icon name="folder-open-outline"></ion-icon>
+        </div>
+        <h3 class="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-200">
+            No documents yet
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
+            Upload your first study document to begin
+        </p>
+        <a href="{% url 'upload_document' %}"
+            class="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-indigo-600 text-white font-medium px-6 py-3 rounded-xl hover:shadow-lg transition">
+            <ion-icon name="add-circle-outline" class="text-xl"></ion-icon>
+            Upload Document
+        </a>
+    </div>
+
+    {% endfor %}
+
+</div>
+
+<!-- Mindmap Type Selection Modal -->
+<div id="mindmapModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm transition-opacity">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl w-11/12 max-w-lg shadow-2xl overflow-hidden transform transition-all scale-100 border border-gray-100 dark:border-slate-700">
+        
+        <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <ion-icon name="git-network-outline" class="text-yellow-500 text-2xl"></ion-icon>
+                Generate Mindmap
+            </h3>
+            <button type="button" onclick="closeMindmapModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition focus:outline-none">
+                <ion-icon name="close-outline" class="text-2xl"></ion-icon>
+            </button>
+        </div>
+
+        <form id="mindmapForm" method="GET" action="" class="p-6">
+            <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">
+                Select the type of mindmap you want to generate. Each type provides a different perspective on your document's content.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Option 1: Overview -->
+                <label class="flex items-start p-4 border border-gray-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50 dark:has-[:checked]:bg-teal-900/20 group">
+                    <div class="flex items-center h-5">
+                        <input type="radio" name="type" value="overview" class="w-5 h-5 text-teal-600 border-gray-300 focus:ring-teal-500 dark:focus:ring-teal-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" checked>
+                    </div>
+                    <div class="ml-4 text-sm">
+                        <span class="font-semibold text-gray-800 dark:text-gray-200 block mb-1">Concept Overview</span>
+                        <p class="text-gray-500 dark:text-gray-400">Displays the main structure formed by single keywords. Best for a quick bird's-eye view.</p>
+                    </div>
+                </label>
+
+                <!-- Option 2: Detailed -->
+                <label class="flex items-start p-4 border border-gray-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20 group">
+                    <div class="flex items-center h-5">
+                        <input type="radio" name="type" value="detailed" class="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div class="ml-4 text-sm">
+                        <span class="font-semibold text-gray-800 dark:text-gray-200 block mb-1">Detailed Breakdown</span>
+                        <p class="text-gray-500 dark:text-gray-400">Deep dive into detailed matter and explanations about the keywords.</p>
+                    </div>
+                </label>
+
+                <!-- Option 3: Takeaways -->
+                <label class="flex items-start p-4 border border-gray-200 dark:border-slate-600 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 dark:has-[:checked]:bg-purple-900/20 group">
+                    <div class="flex items-center h-5">
+                        <input type="radio" name="type" value="takeaways" class="w-5 h-5 text-purple-600 border-gray-300 focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div class="ml-4 text-sm">
+                        <span class="font-semibold text-gray-800 dark:text-gray-200 block mb-1">Key Takeaways</span>
+                        <p class="text-gray-500 dark:text-gray-400">Highlights the most important points, core conclusions, and actionable insights.</p>
+                    </div>
+                </label>
+            </div>
+
+            <div class="mt-8 flex justify-end gap-3">
+                <button type="button" onclick="closeMindmapModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-600 focus:ring-4 focus:outline-none focus:ring-gray-200 dark:focus:ring-gray-700 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-indigo-600 rounded-xl hover:from-teal-600 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-teal-300 dark:focus:ring-teal-800 shadow-md transition-all">
+                    Generate
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openMindmapModal(docId) {
+        document.getElementById('mindmapModal').classList.remove('hidden');
+        document.getElementById('mindmapForm').action = '/learning/generate-mindmap/' + docId + '/';
+    }
+
+    function closeMindmapModal() {
+        document.getElementById('mindmapModal').classList.add('hidden');
+    }
+</script>
+
+{% endblock %}
